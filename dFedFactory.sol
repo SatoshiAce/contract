@@ -13,7 +13,7 @@ contract dFedFactory {
     address public baseToken;
     address public FEDToken;
 
-    event PairCreated(address indexed token, string symbol, address pair);
+    event PairCreated(address indexed token, string symbol, uint8 decimals);
 
     modifier onlyPair() {
         require(pairExist[msg.sender]);
@@ -58,6 +58,12 @@ contract dFedFactory {
         return allPairs.length;
     }
 
+    function getInitHash() public view returns(bytes32) {
+        bytes memory bytecode = type(dFedPair).creationCode;
+        bytes32 salt = keccak256(bytecode);
+        return salt;
+    }
+
     function createPair(address _token) external returns (address _pair) {
         require(baseToken != address(0) && _token != address(0), 'dFedFactory: ZERO_ADDRESS');
         require(getPair[_token] == address(0), 'dFedFactory: PAIR_EXISTS');
@@ -68,11 +74,11 @@ contract dFedFactory {
             _pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
         }
 
-        dFedPair(_pair).initialize(baseToken, _token, decimalsFED);
+        dFedPair(_pair).initialize(baseToken, _token);
         getPair[_token] = _pair;
         pairExist[_pair] = true;
         allPairs.push(_pair);
-        emit PairCreated(_token, IERC20(_token).symbol(), _pair);
+        emit PairCreated(_token, IERC20(_token).symbol(), IERC20(_token).decimals());
     }
 
     function mintBaseToken(address _to, uint _value) external onlyPair {
@@ -103,10 +109,11 @@ contract dFedFactory {
     uint8 decimalsFED;
     uint8 decimalsBaseToken;
 
-    function updateInfo() external onlyPair {
+    function updateInfo() external onlyPair returns (uint){
         if (block.number > lastRewardedBlockGlobal && totalUSDDinLiquidityPoolGlobal > 0) {
-            accRewardPerUSDDGlobal = (block.number.sub(lastRewardedBlockGlobal)).mul(100).mul(10 ** decimalsFED).mul(10 ** decimalsBaseToken) / (totalUSDDinLiquidityPoolGlobal);
+            accRewardPerUSDDGlobal = accRewardPerUSDDGlobal.add((block.number.sub(lastRewardedBlockGlobal)).mul(100).mul(10 ** decimalsFED).mul(10 ** decimalsBaseToken) / (totalUSDDinLiquidityPoolGlobal));
             lastRewardedBlockGlobal = block.number;
         }
+        return accRewardPerUSDDGlobal;
     }
 }

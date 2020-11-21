@@ -8,9 +8,6 @@ contract dFedBank is dFedERC20 {
     debtInfo[] public debtInfos;
     using Math for uint;
 
-    //    event Mortgage(address indexed  sender, uint pledgeAmount, uint targetAmount);
-    //    event Repay(address indexed sender, uint debtId, uint pledgeAmount, uint repayAmount);
-    //    event Liquidate(address indexed sender, uint debtId, uint pledgeAmount, uint repayAmount);
     event DebtUpdate(address indexed owner, uint debtId, uint pledgeAmount, uint repayAmount);
 
     bool private unlocked = true;
@@ -94,7 +91,6 @@ contract dFedBank is dFedERC20 {
         delDebit(_index);
         IdFedFactory(factory).burnBaseToken(address(this), _tmpRepayAmount);
         TransferHelper.safeTransfer(token1, _user, _tmpPledgeAmount);
-        //emit Repay(msg.sender, _debtId, _tmpPledgeAmount, _tmpRepayAmount);
         emit DebtUpdate(_user, _debtId, 0, 0);
     }
 
